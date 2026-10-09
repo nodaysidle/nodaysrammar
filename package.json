@@ -1,8 +1,8 @@
 {
   "name": "nodaysrammar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
-  "description": "On-Device Multilingual Grammar Checker Chrome Extension",
+  "description": "NODAYSIDLE nodaysrammar — On-Device Multilingual Grammar Checker Chrome Extension",
   "author": "nodaysidle",
   "license": "MIT",
   "repository": {
@@ -12,11 +12,11 @@
   "scripts": {
     "test": "node tests/test-live.js",
     "test:autofix": "node tests/test-autofix.js",
+    "test:regressions": "node tests/test-regressions.js",
+    "test:unit": "node tests/test-regressions.js",
     "generate:models": "python3 scripts/generate_real_models.py",
-    "generate:icons": "node assets/icons/generate-icons.js"
-  },
-  "dependencies": {
-    "onnxruntime-web": "^1.20.1"
+    "generate:icons": "node assets/icons/generate-icons.js",
+    "validate:manifest": "node -e \"const m=require('./manifest.json'); if(!m.manifest_version||!m.name||!m.version) process.exit(1); console.log('manifest ok', m.version);\""
   },
   "devDependencies": {
     "puppeteer-core": "^24.40.0"

@@ -1,8 +1,10 @@
 /**
  * background/model-loader.js
- * Manages loading, caching, and lifecycle of local AI neural models (ONNX / WebAssembly).
- * Runs 100% on-device with zero network requests.
+ * Loads and caches the on-device token label tables (vocab-*.json) used by the
+ * small JS classifier. Runs 100% on-device with zero network requests.
  */
+
+import { normalizeApostrophes } from './spell-corrector.js';
 
 export const ModelStatus = {
   UNINITIALIZED: 'uninitialized',
@@ -13,14 +15,13 @@ export const ModelStatus = {
 };
 
 /**
- * On-device neural forward-pass classifier.
- * Executes the exact neural computation graph defined in the ONNX model:
- * Gather(E, input_ids) -> MatMul(W1) + Add(B1) -> ReLU -> MatMul(W2) + Add(B2) -> Logits
+ * On-device token classifier over a fixed per-token label table.
+ * Forward pass: Gather(E, input_ids) -> MatMul(W1) + Add(B1) -> ReLU -> MatMul(W2) + Add(B2) -> Logits
+ * Weights live in models/vocab-*.json (generated with seed 42 + forced labels; not trained).
  */
-export class NeuralModelSession {
-  constructor(language, onnxBuffer, vocabData) {
+export class TokenModelSession {
+  constructor(language, vocabData) {
     this.language = language;
-    this.onnxByteLength = onnxBuffer ? onnxBuffer.byteLength : 0;
     this.classes = vocabData.classes || ['OK', 'SPELL', 'GRAMMAR', 'PREP', 'PUNCT'];
     this.vocab = vocabData.vocab || {};
     this.corrections = vocabData.corrections || {};
@@ -45,7 +46,7 @@ export class NeuralModelSession {
 
     while ((match = regex.exec(text)) !== null) {
       const word = match[0];
-      const lower = word.toLowerCase();
+      const lower = normalizeApostrophes(word).toLowerCase();
       const tokenId = this.vocab[lower] !== undefined ? this.vocab[lower] : 1; // 1 is <unk>
       tokens.push({
         token: word,
@@ -60,7 +61,7 @@ export class NeuralModelSession {
   }
 
   /**
-   * Vectorized neural forward pass
+   * Vectorized forward pass over embedding + two linear layers
    * @param {number} tokenId
    * @returns {{ classLabel: string, logits: Float32Array, confidence: number }}
    */
@@ -114,6 +115,9 @@ export class NeuralModelSession {
   }
 }
 
+/** @deprecated Use TokenModelSession — kept as alias for any external references */
+export const NeuralModelSession = TokenModelSession;
+
 export class ModelLoader {
   constructor() {
     this.status = {
@@ -143,7 +147,7 @@ export class ModelLoader {
   }
 
   /**
-   * Lazily loads the ONNX model and neural session for a given language.
+   * Lazily loads the vocab/weight JSON and classifier session for a language.
    * @param {'en' | 'it' | 'sl'} lang
    * @returns {Promise<boolean>} True if loaded and ready
    */
@@ -164,18 +168,9 @@ export class ModelLoader {
     }
 
     this.status[lang] = ModelStatus.LOADING;
-    console.info(`[nodaysrammar] Loading on-device neural model for: ${lang}`);
+    console.info(`[nodaysrammar] Loading on-device classifier for: ${lang}`);
 
     try {
-      // 1. Fetch ONNX binary weights
-      const onnxUrl = chrome.runtime.getURL(`models/${lang}-grammar.onnx`);
-      const onnxRes = await fetch(onnxUrl);
-      if (!onnxRes.ok) {
-        throw new Error(`ONNX model missing at models/${lang}-grammar.onnx (Status ${onnxRes.status})`);
-      }
-      const onnxBuffer = await onnxRes.arrayBuffer();
-
-      // 2. Fetch vocabulary and model parameter definitions
       const vocabUrl = chrome.runtime.getURL(`models/vocab-${lang}.json`);
       const vocabRes = await fetch(vocabUrl);
       if (!vocabRes.ok) {
@@ -183,13 +178,12 @@ export class ModelLoader {
       }
       const vocabData = await vocabRes.json();
 
-      // 3. Initialize active neural session
-      const session = new NeuralModelSession(lang, onnxBuffer, vocabData);
+      const session = new TokenModelSession(lang, vocabData);
       this.models.set(lang, session);
 
       this.status[lang] = ModelStatus.READY;
       this.errorDetails.delete(lang);
-      console.info(`[nodaysrammar] Model for ${lang} is READY (${onnxBuffer.byteLength} bytes).`);
+      console.info(`[nodaysrammar] Classifier for ${lang} is READY (vocab size ${vocabData.vocab_size || Object.keys(vocabData.vocab || {}).length}).`);
       return true;
 
     } catch (err) {
@@ -211,7 +205,7 @@ export class ModelLoader {
   /**
    * Retrieves active model context for inference
    * @param {'en' | 'it' | 'sl'} lang
-   * @returns {NeuralModelSession | null}
+   * @returns {TokenModelSession | null}
    */
   getModel(lang) {
     return this.models.get(lang) || null;

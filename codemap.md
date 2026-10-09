@@ -1,7 +1,7 @@
-# Codemap — nodaysrammar
+# Codemap — NODAYSIDLE nodaysrammar
 
 ## Overview
-**nodaysrammar** is an on-device, zero-telemetry multilingual grammar and spell checking browser extension for Chromium-based browsers (Chrome, Brave, Edge, Arc) built natively with Manifest V3. It operates 100% locally using ONNX Runtime Web (WASM) and 35,000-word offline frequency dictionaries across English (`en`), Italian (`it`), and Slovenian (`sl`).
+**NODAYSIDLE nodaysrammar** is an on-device, zero-telemetry multilingual grammar and spell checking browser extension for Chromium-based browsers (Chrome, Brave, Edge, Arc) built with Manifest V3. It runs entirely locally using a small JS classifier over fixed `vocab-*.json` label tables, ~35,000-word offline frequency dictionaries, and grammar rules for English (`en`), Italian (`it`), and Slovenian (`sl`).
 
 ---
 
@@ -9,81 +9,37 @@
 
 ```
 nodaysrammar/
-├── manifest.json                  # Manifest V3 specification & permission sandboxing
-├── AGENTS.md                      # Specification, IPC contracts & engineering invariants
+├── manifest.json                  # Manifest V3 (permission: storage)
+├── AGENTS.md                      # Specification & engineering invariants
 ├── CLAUDE.md                      # Agent entrypoint pointer (@AGENTS.md)
-├── codemap.md                     # Architecture map & directory navigation (this file)
-├── LICENSE                        # MIT License (2026 nodaysidle)
-├── README.md                      # Portfolio-aligned documentation, architecture & badges
-├── USERGUIDE.md                   # Complete user, developer & troubleshooting guide
-├── package.json                   # Project metadata, dependencies & test scripts
+├── codemap.md                     # Architecture map (this file)
+├── LICENSE                        # MIT License
+├── README.md                      # Product documentation
+├── USERGUIDE.md                   # User & troubleshooting guide
+├── CHANGELOG.md                   # Release history
+├── package.json                   # Metadata & scripts (name: nodaysrammar)
 │
-├── background/                    # Background Service Worker & Model Inferences
-│   ├── service-worker.js          # Service worker entrypoint & message routing
-│   ├── model-loader.js            # ONNX model loader & WASM tensor execution
-│   ├── inference-engine.js        # Multilingual neural & syntactic grammar evaluator
-│   ├── spell-corrector.js         # 35,000-word offline dictionary & Levenshtein generator
-│   └── language-detector.js       # Tri-gram fast on-device language detector (EN/IT/SL)
+├── background/
+│   ├── service-worker.js          # IPC router, settings, domain block check
+│   ├── model-loader.js            # vocab-*.json loader & JS forward pass
+│   ├── inference-engine.js        # Classifier + dictionaries + regex rules
+│   ├── spell-corrector.js         # Dictionary + ranked Levenshtein suggestions
+│   └── language-detector.js       # n-gram language detector (EN/IT/SL)
 │
-├── content/                       # Content Script & Shadow DOM Injection
-│   ├── content-script.js          # Editable field observer, debounce & replacement dispatcher
-│   ├── field-detector.js          # Input/textarea/contenteditable detection
-│   ├── overlay-manager.js         # Isolated Shadow DOM: badges, squiggly highlights, popover card
-│   └── content.css                # Scoped host container styles
+├── content/
+│   ├── content-script.js          # Observer, blocklist gate, Shadow DOM overlay
+│   ├── field-detector.js          # Editable field helpers (module copy)
+│   ├── overlay-manager.js         # Overlay helpers (module copy)
+│   └── content.css                # Host container styles
 │
-├── popup/                         # Action Toolbar Popup
-│   ├── popup.html                 # Toolbar popup DOM
-│   ├── popup.js                   # Extension state toggle, live language indicator
-│   └── popup.css                  # Dark/light glassmorphic styling
+├── popup/ · options/ · onboarding/
 │
-├── options/                       # Options / Settings Dashboard
-│   ├── options.html               # Options markup (allowlists, custom words, rules)
-│   ├── options.js                 # Configuration storage synchronization
-│   └── options.css                # Settings layout styling
+├── models/
+│   ├── vocab-{en,it,sl}.json      # Fixed per-token label tables (seed 42, not trained)
+│   └── dict-{en,it,sl}.json       # ~35k-word frequency dictionaries
 │
-├── onboarding/                    # Welcome & Interactive Sandbox
-│   ├── onboarding.html            # Welcome tour & live interactive playground
-│   ├── onboarding.js              # Onboarding interactive controller
-│   └── onboarding.css             # Onboarding stylesheet
-│
-├── models/                        # Pre-trained Offline Neural Models & Vocabularies
-│   ├── README.md                  # Model architecture and export documentation
-│   ├── en-grammar.onnx            # English neural token classifier (opset 17)
-│   ├── it-grammar.onnx            # Italian neural token classifier (opset 17)
-│   ├── sl-grammar.onnx            # Slovenian neural token classifier (opset 17)
-│   ├── vocab-en.json              # English vocabulary & grammar patterns
-│   ├── vocab-it.json              # Italian vocabulary & grammar patterns
-│   ├── vocab-sl.json              # Slovenian vocabulary & grammar patterns
-│   ├── dict-en.json               # 35,000-word English frequency dictionary
-│   ├── dict-it.json               # 35,000-word Italian frequency dictionary
-│   └── dict-sl.json               # 35,000-word Slovenian frequency dictionary
-│
-├── lib/                           # Vendor Libraries
-│   └── ort.bundle.min.mjs         # Bundled ONNX Runtime Web (WASM execution)
-│
-├── assets/                        # Icons and Brand Assets
-│   ├── icon.svg                   # Vector logo
-│   └── icons/                     # Generated PNG icons (16, 32, 48, 128)
-│
-├── scripts/                       # Model Training & Asset Generation
-│   └── generate_real_models.py    # Python training & ONNX export pipeline
-│
-├── tests/                         # End-to-End Headless & Headed Browser Tests
-│   ├── test-live.js               # Comprehensive 12-step Puppeteer live test suite
-│   ├── test-autofix.js            # Spacebar auto-fix and "Fix All" workflow tests
-│   └── test-page.html             # Multi-input test fixture (textarea, inputs, contenteditable)
-│
-└── screenshots/                   # Verification Screenshots
-    ├── 01-options-page.png
-    ├── 02-live-badge-detected.png
-    ├── 03-live-popover-open.png
-    ├── 04-live-text-replaced.png
-    ├── 05-slovenian-rules-live.png
-    ├── 06-slovenian-text-replaced.png
-    ├── 07-bottom-input-popover-flipped-up.png
-    ├── 08-bottom-input-fixed.png
-    ├── 09-zero-errors-status-card.png
-    ├── 10-cross-lingual-catch.png
-    ├── 11-35k-dictionary-multi-errors.png
-    └── 12-fully-corrected-sentence.png
+├── assets/icons/                  # icon-16/32/48/128.png
+├── scripts/generate_real_models.py
+├── tests/                         # test-live, test-autofix, test-regressions
+└── .github/workflows/             # ci.yml, release.yml
 ```

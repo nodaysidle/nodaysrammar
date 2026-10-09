@@ -1,15 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "nodaysrammar - On-Device Multilingual Grammar Checker",
-  "version": "1.0.0",
-  "description": "Real-time, private, on-device multilingual grammar and spell checker for English, Italian, and Slovenian using local AI.",
+  "name": "NODAYSIDLE nodaysrammar - On-Device Multilingual Grammar Checker",
+  "version": "1.0.1",
+  "description": "Real-time, private, on-device multilingual grammar and spell checker for English, Italian, and Slovenian.",
   "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ],
-  "host_permissions": [
-    "<all_urls>"
+    "storage"
   ],
   "background": {
     "service_worker": "background/service-worker.js",
@@ -38,7 +33,7 @@
       "48": "assets/icons/icon-48.png",
       "128": "assets/icons/icon-128.png"
     },
-    "default_title": "nodaysrammar"
+    "default_title": "NODAYSIDLE nodaysrammar"
   },
   "options_ui": {
     "page": "options/options.html",
@@ -49,17 +44,5 @@
     "32": "assets/icons/icon-32.png",
     "48": "assets/icons/icon-48.png",
     "128": "assets/icons/icon-128.png"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "models/*",
-        "assets/*",
-        "lib/*"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ]
+  }
 }

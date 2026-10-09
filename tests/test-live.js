@@ -4,15 +4,16 @@
  * Serves test-page.html on http://127.0.0.1:8765 so content scripts inject naturally.
  */
 
-import puppeteer from 'puppeteer-core';
 import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { resolveBrowserPath } from './browser-path.js';
+import { launchWithExtension, waitForExtensionWorker } from './launch-extension.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXT_PATH = path.resolve(__dirname, '..');
-const BRAVE_BIN = '/usr/bin/brave-origin';
+const BROWSER_BIN = resolveBrowserPath();
 const SCREENSHOT_DIR = path.join(__dirname, '..', 'screenshots');
 fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 
@@ -34,38 +35,17 @@ console.log('Test HTTP server listening on http://127.0.0.1:8765');
 async function runLiveTest() {
   console.log('--- STARTING LIVE CHROMIUM EXTENSION TEST ---');
   console.log('Extension path:', EXT_PATH);
-  console.log('Browser binary:', BRAVE_BIN);
+  console.log('Browser binary:', BROWSER_BIN);
 
-  const browser = await puppeteer.launch({
-    executablePath: BRAVE_BIN,
-    headless: 'new',
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-gpu',
-      '--window-size=1280,900'
-    ]
+  const browser = await launchWithExtension(EXT_PATH, {
+    executablePath: BROWSER_BIN,
+    headless: false
   });
 
   try {
     // 1. Wait for background service worker to initialize
     console.log('Waiting for background service worker target...');
-    let workerTarget = null;
-    for (let i = 0; i < 30; i++) {
-      const targets = browser.targets();
-      workerTarget = targets.find((t) => t.type() === 'service_worker');
-      if (workerTarget) break;
-      await sleep(200);
-    }
-
-    if (!workerTarget) {
-      throw new Error('Service worker target not found');
-    }
-
-    const workerUrl = workerTarget.url();
-    const extId = new URL(workerUrl).hostname;
+    const { extId } = await waitForExtensionWorker(browser);
     console.log(`[PASS] Background Service Worker active! Extension ID: ${extId}`);
 
     // Wait a brief moment for all 3 models to prewarm

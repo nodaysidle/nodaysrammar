@@ -40,11 +40,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (langStatus === 'ready') {
         setStatusUI('ready', 'Engine Ready', `Active language: ${activeLang.toUpperCase()}`);
       } else if (langStatus === 'loading') {
-        setStatusUI('loading', 'Loading Model...', 'Initializing local AI runtime');
+        setStatusUI('loading', 'Loading Model...', 'Initializing on-device classifier');
       } else if (langStatus === 'error') {
         setStatusUI('error', 'Error Loading Model', res.errors?.[activeLang] || 'Check options');
       } else {
-        setStatusUI('ready', 'Engine Ready', 'Local neural-rule pipeline active');
+        setStatusUI('ready', 'Engine Ready', 'Local classifier + dictionary pipeline');
       }
     } catch (err) {
       setStatusUI('error', 'Disconnected', 'Extension background inactive');
