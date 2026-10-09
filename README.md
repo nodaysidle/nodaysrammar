@@ -86,12 +86,13 @@ flowchart TD
 
 | Feature | Screenshot |
 | --- | --- |
-| **Interactive Underlines & Errors** | ![English Errors](screenshots/02-english-errors.png) |
-| **Auto-Flip Suggestion Card** | ![Card Inspection](screenshots/06-underline-inspection.png) |
-| **Instant Correction Applied** | ![Error Fixed](screenshots/09-error-fixed.png) |
-| **All Fixed State** | ![All Fixed](screenshots/10-all-fixed.png) |
-| **Options & Settings Page** | ![Options Page](screenshots/11-options-page.png) |
-| **Interactive Onboarding Tour** | ![Onboarding](screenshots/12-onboarding-page.png) |
+| **Interactive Underlines & Badge** | ![Live Badge Detected](screenshots/02-live-badge-detected.png) |
+| **Suggestion Popover Card** | ![Popover Inspection](screenshots/03-live-popover-open.png) |
+| **Instant Correction Applied** | ![Text Replaced](screenshots/04-live-text-replaced.png) |
+| **Auto-Flipping Viewport Popover** | ![Auto-Flip Up](screenshots/07-bottom-input-popover-flipped-up.png) |
+| **35,000-Word Dictionary Checks** | ![Dictionary Errors](screenshots/11-35k-dictionary-multi-errors.png) |
+| **Fully Corrected State** | ![All Corrected](screenshots/12-fully-corrected-sentence.png) |
+| **Options & Configuration Page** | ![Options Page](screenshots/01-options-page.png) |
 
 ---
 

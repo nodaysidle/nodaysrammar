@@ -74,16 +74,16 @@ nodaysrammar/
 │   └── test-page.html             # Multi-input test fixture (textarea, inputs, contenteditable)
 │
 └── screenshots/                   # Verification Screenshots
-    ├── 01-initial-clean.png
-    ├── 02-english-errors.png
-    ├── 03-italian-errors.png
-    ├── 04-slovenian-errors.png
-    ├── 05-contenteditable-errors.png
-    ├── 06-underline-inspection.png
-    ├── 07-badge-clicked.png
-    ├── 08-card-hover.png
-    ├── 09-error-fixed.png
-    ├── 10-all-fixed.png
-    ├── 11-options-page.png
-    └── 12-onboarding-page.png
+    ├── 01-options-page.png
+    ├── 02-live-badge-detected.png
+    ├── 03-live-popover-open.png
+    ├── 04-live-text-replaced.png
+    ├── 05-slovenian-rules-live.png
+    ├── 06-slovenian-text-replaced.png
+    ├── 07-bottom-input-popover-flipped-up.png
+    ├── 08-bottom-input-fixed.png
+    ├── 09-zero-errors-status-card.png
+    ├── 10-cross-lingual-catch.png
+    ├── 11-35k-dictionary-multi-errors.png
+    └── 12-fully-corrected-sentence.png
 ```
