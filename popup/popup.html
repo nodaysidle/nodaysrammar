@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nodaysrammar</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="header">
+      <div class="logo-area">
+        <span class="icon">✨</span>
+        <span class="title">nodaysrammar</span>
+      </div>
+      <label class="switch" title="Toggle Extension">
+        <input type="checkbox" id="toggle-enable" checked>
+        <span class="slider round"></span>
+      </label>
+    </header>
+
+    <div class="status-card" id="status-card">
+      <div class="status-indicator" id="status-dot"></div>
+      <div class="status-info">
+        <span class="status-label" id="status-text">Checking models...</span>
+        <span class="status-subtext" id="status-subtext">On-device AI engine</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label for="language-select">Target Language</label>
+      <select id="language-select">
+        <option value="auto">🌐 Auto-detect</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="it">🇮🇹 Italian (Italiano)</option>
+        <option value="sl">🇸🇮 Slovenian (Slovenščina)</option>
+      </select>
+    <div class="control-group" style="flex-direction: row; justify-content: space-between; align-items: center; padding: 2px 0;">
+      <div>
+        <label for="toggle-autofix" style="text-transform: none; font-size: 13px; color: var(--text-main); font-weight: 500; cursor: pointer;">Auto-Fix on Spacebar</label>
+        <div style="font-size: 11px; color: var(--text-muted);">Instantly fix typos as you type</div>
+      </div>
+      <input type="checkbox" id="toggle-autofix" style="width: 18px; height: 18px; cursor: pointer;">
+    </div>
+
+    <div class="info-badge">
+      <span class="info-icon">🔒</span>
+      <span>100% Private &amp; On-Device. Zero network calls.</span>
+    </div>
+
+    <footer class="footer">
+      <button id="btn-options" class="footer-btn">⚙️ Settings</button>
+      <button id="btn-reload-model" class="footer-btn secondary">🔄 Reload Engine</button>
+    </footer>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

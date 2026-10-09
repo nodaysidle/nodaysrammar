@@ -1,0 +1,24 @@
+{
+  "name": "nodaysrammar",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "On-Device Multilingual Grammar Checker Chrome Extension",
+  "author": "nodaysidle",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nodaysidle/nodaysrammar.git"
+  },
+  "scripts": {
+    "test": "node tests/test-live.js",
+    "test:autofix": "node tests/test-autofix.js",
+    "generate:models": "python3 scripts/generate_real_models.py",
+    "generate:icons": "node assets/icons/generate-icons.js"
+  },
+  "dependencies": {
+    "onnxruntime-web": "^1.20.1"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.40.0"
+  }
+}

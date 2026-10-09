@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nodaysrammar - Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="settings-container">
+    <header class="header">
+      <div class="logo">
+        <span class="icon">✨</span>
+        <div>
+          <h1>nodaysrammar Settings</h1>
+          <p class="subtitle">Configure your on-device multilingual grammar engine</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- General Settings -->
+    <section class="card">
+      <h2>General Configuration</h2>
+      <div class="form-row">
+        <label for="opt-enabled">Enable Grammar Checking</label>
+        <input type="checkbox" id="opt-enabled" class="checkbox-toggle">
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="opt-autofix">Auto-Fix on Spacebar</label>
+          <p class="desc">Instantly replaces misspelled words the moment you hit Space or Enter.</p>
+        </div>
+        <input type="checkbox" id="opt-autofix" class="checkbox-toggle">
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="opt-language">Default Language Engine</label>
+          <p class="desc">Select primary language or let nodaysrammar auto-detect between EN, IT, and SL.</p>
+        </div>
+        <select id="opt-language">
+          <option value="auto">Auto-detect (EN / IT / SL)</option>
+          <option value="en">English (en)</option>
+          <option value="it">Italian (it)</option>
+          <option value="sl">Slovenian (sl)</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Site Management -->
+    <section class="card">
+      <h2>Per-Site Permissions &amp; Blocklist</h2>
+      <p class="desc">Specify domains where nodaysrammar should be disabled (e.g. banking, internal tools).</p>
+      <div class="domain-input-group">
+        <input type="text" id="domain-input" placeholder="e.g. secure.bank.com">
+        <button id="btn-add-domain" class="btn btn-secondary">Add Domain</button>
+      </div>
+      <ul id="domain-list" class="tag-list">
+        <!-- Rendered dynamically -->
+      </ul>
+    </section>
+
+    <!-- Local AI Runtime Status -->
+    <section class="card">
+      <h2>On-Device Model Runtime Status</h2>
+      <p class="desc">Models run locally via WebAssembly and ONNX Runtime Web. No cloud dependencies.</p>
+      <div class="model-status-table">
+        <div class="status-row">
+          <span>🇬🇧 English Model (en-grammar.onnx)</span>
+          <span class="badge" id="model-status-en">Checking...</span>
+        </div>
+        <div class="status-row">
+          <span>🇮🇹 Italian Model (it-grammar.onnx)</span>
+          <span class="badge" id="model-status-it">Checking...</span>
+        </div>
+        <div class="status-row">
+          <span>🇸🇮 Slovenian Model (sl-grammar.onnx)</span>
+          <span class="badge" id="model-status-sl">Checking...</span>
+        </div>
+      </div>
+      <div class="card-footer-actions">
+        <button id="btn-reload-all-models" class="btn btn-secondary">🔄 Purge Cache &amp; Reload Models</button>
+      </div>
+    </section>
+
+    <!-- Reset / Save -->
+    <div class="bottom-actions">
+      <button id="btn-reset-defaults" class="btn btn-danger">Reset to Defaults</button>
+      <button id="btn-save" class="btn btn-primary">Save Changes</button>
+    </div>
+
+    <div id="toast" class="toast">Settings successfully saved!</div>
+  </div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>

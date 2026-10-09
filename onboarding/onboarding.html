@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to nodaysrammar</title>
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo-badge">✨</div>
+      <h1>Welcome to nodaysrammar</h1>
+      <p class="subtitle">Real-time, private, on-device multilingual grammar assistance.</p>
+    </header>
+
+    <section class="card">
+      <h2>1. Total Privacy, Zero Cloud Calls</h2>
+      <p>
+        Unlike cloud-based writing assistants, <strong>nodaysrammar</strong> processes 100% of your text locally
+        inside your browser using on-device models. Your keystrokes, emails, and documents never leave your machine.
+      </p>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">🛡️</div>
+          <div>
+            <strong>Permission Hygiene</strong>
+            <p>We use <code>storage</code> for preferences, <code>activeTab</code> for target inputs, and <code>scripting</code> for overlays.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">⚡</div>
+          <div>
+            <strong>WebAssembly / ONNX</strong>
+            <p>Accelerated local inference with zero latency and offline capability.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Choose Your Primary Language</h2>
+      <p>Select your default language or leave on Auto-detect.</p>
+      <div class="language-options">
+        <label class="lang-card">
+          <input type="radio" name="default-lang" value="auto" checked>
+          <div class="lang-content">
+            <span class="flag">🌐</span>
+            <strong>Auto-detect</strong>
+            <span>Detects English, Italian, or Slovenian automatically</span>
+          </div>
+        </label>
+        <label class="lang-card">
+          <input type="radio" name="default-lang" value="en">
+          <div class="lang-content">
+            <span class="flag">🇬🇧</span>
+            <strong>English</strong>
+            <span>Native grammar, agreement &amp; spelling</span>
+          </div>
+        </label>
+        <label class="lang-card">
+          <input type="radio" name="default-lang" value="it">
+          <div class="lang-content">
+            <span class="flag">🇮🇹</span>
+            <strong>Italian</strong>
+            <span>Accents, concordance &amp; elision rules</span>
+          </div>
+        </label>
+        <label class="lang-card">
+          <input type="radio" name="default-lang" value="sl">
+          <div class="lang-content">
+            <span class="flag">🇸🇮</span>
+            <strong>Slovenian</strong>
+            <span>S/Z &amp; K/H rules, commas, diacritics</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3. Interactive Playground</h2>
+      <p>Test out nodaysrammar right here! Try editing the text below:</p>
+      <div class="playground-wrapper">
+        <textarea id="demo-textarea" rows="4">This is a apple and he dont have no idea what their is doing. Včeraj sem šel z prijateljem k kmetu ker je lepo vreme.</textarea>
+      </div>
+      <p class="hint">Watch the badge appear in the bottom-right corner of the box. Click it to review and accept corrections in place!</p>
+    </section>
+
+    <div class="actions">
+      <button id="btn-save-finish" class="btn btn-primary">Save &amp; Get Started →</button>
+    </div>
+  </div>
+
+  <script src="onboarding.js" type="module"></script>
+</body>
+</html>

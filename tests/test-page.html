@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>nodaysrammar In-Page Testing Target</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; background: #f0f2f5; }
+    .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    h1 { margin-top: 0; color: #111; font-size: 20px; }
+    textarea { width: 100%; height: 120px; font-size: 16px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+    .rich-editor { width: 100%; min-height: 80px; font-size: 16px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>nodaysrammar In-Page Testing Target</h1>
+    <p>Textarea input:</p>
+    <textarea id="test-textarea" placeholder="Type here..."></textarea>
+    <p>Contenteditable div:</p>
+    <div id="test-contenteditable" class="rich-editor" contenteditable="true"></div>
+  </div>
+
+  <!-- Bottom chat input bar simulating Telegram Web / Discord / Slack -->
+  <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 700px; max-width: 90%; background: #212121; padding: 10px 16px; border-radius: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px;">
+    <span style="color: #aaa; font-size: 18px;">📎</span>
+    <input id="bottom-chat-input" type="text" placeholder="Write a message..." style="flex: 1; background: transparent; border: none; color: #fff; font-size: 15px; outline: none; padding-right: 50px;">
+  </div>
+</body>
+</html>

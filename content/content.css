@@ -1,0 +1,14 @@
+/* content/content.css */
+/* Scoped styles for nodaysrammar host container */
+
+#nodaysrammar-root {
+  all: initial;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  z-index: 2147483647;
+  pointer-events: none;
+}
