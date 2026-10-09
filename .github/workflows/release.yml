@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify manifest version matches tag
+        id: ver
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          EXPECTED="${TAG#v}"
+          MANIFEST_VER=$(node -p "require('./manifest.json').version")
+          PKG_VER=$(node -p "require('./package.json').version")
+          echo "tag=$TAG"
+          echo "expected=$EXPECTED"
+          echo "manifest=$MANIFEST_VER"
+          echo "package=$PKG_VER"
+          if [ "$MANIFEST_VER" != "$EXPECTED" ]; then
+            echo "::error::manifest.json version ($MANIFEST_VER) != tag without v ($EXPECTED)"
+            exit 1
+          fi
+          if [ "$PKG_VER" != "$EXPECTED" ]; then
+            echo "::error::package.json version ($PKG_VER) != tag without v ($EXPECTED)"
+            exit 1
+          fi
+          echo "version=$EXPECTED" >> "$GITHUB_OUTPUT"
+
+      - name: Build runtime zip (trace-verified contents only)
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+          STAGE=$(mktemp -d)
+          DEST="$STAGE/nodaysrammar"
+          mkdir -p "$DEST"
+
+          # Runtime files (verified by tracing manifest + fetch/import):
+          # - manifest.json, LICENSE
+          # - background/*.js (service-worker imports model-loader, inference-engine,
+          #   spell-corrector, language-detector; loads models/vocab-*.json + dict-*.json)
+          # - content/* (manifest content_scripts)
+          # - popup/*, options/*, onboarding/*
+          # - assets/icons/icon-{16,32,48,128}.png (manifest icons)
+          # - models/*.json (vocab + dictionaries; no .onnx, no README)
+          cp manifest.json LICENSE "$DEST/"
+          cp -R background content popup options onboarding "$DEST/"
+          mkdir -p "$DEST/assets/icons"
+          cp assets/icons/icon-16.png assets/icons/icon-32.png \
+             assets/icons/icon-48.png assets/icons/icon-128.png \
+             "$DEST/assets/icons/"
+          mkdir -p "$DEST/models"
+          cp models/vocab-*.json models/dict-*.json "$DEST/models/"
+
+          # Guaranteed exclusions (docs/, media demos, tests, scripts, screenshots, md, package*)
+          rm -f "$DEST/assets/icons/generate-icons.js"
+          find "$DEST" -name '*.md' -delete
+          find "$DEST" -name 'package*.json' -delete
+          find "$DEST" -name '*.gif' -delete
+          rm -rf "$DEST/tests" "$DEST/scripts" "$DEST/screenshots" "$DEST/docs" \
+                 "$DEST/lib" "$DEST/node_modules" "$DEST/.git" "$DEST/media"
+
+          ZIP_NAME="NODAYSIDLE-nodaysrammar-${VERSION}-chrome.zip"
+          (
+            cd "$STAGE"
+            zip -r "$ZIP_NAME" nodaysrammar
+          )
+          cp "$STAGE/$ZIP_NAME" .
+          shasum -a 256 "$ZIP_NAME" | tee "${ZIP_NAME}.sha256"
+          echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+          ls -la "$ZIP_NAME" "${ZIP_NAME}.sha256"
+          echo "--- zip contents ---"
+          unzip -l "$ZIP_NAME"
+
+      - name: Create or update GitHub Release and upload assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${{ steps.ver.outputs.version }}"
+          ZIP_NAME="${ZIP_NAME}"
+          SHA_NAME="${ZIP_NAME}.sha256"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists — uploading with --clobber"
+            gh release upload "$TAG" "$ZIP_NAME" "$SHA_NAME" --clobber
+          else
+            echo "Creating release $TAG"
+            gh release create "$TAG" "$ZIP_NAME" "$SHA_NAME" \
+              --title "NODAYSIDLE nodaysrammar ${VERSION}" \
+              --notes "Runtime package for Chromium (Manifest V3). Verify the SHA-256 checksum before loading unpacked."
+          fi

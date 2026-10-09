@@ -313,10 +313,38 @@ class OverlayManager {
       if (!this.popoverElement) return;
       const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
       if (!path.includes(this.popoverElement) && !path.includes(this.badgeElement)) {
-        this.popoverElement.remove();
-        this.popoverElement = null;
+        // Clicking the active field: close popover but let the field keep/receive focus
+        const clickedActive = this.activeElement && path.includes(this.activeElement);
+        this.closePopover({ restoreFocus: !clickedActive });
       }
     }, true);
+  }
+
+  /**
+   * Close the suggestion popover and optionally restore focus/caret to the active field.
+   * Prevents the textarea from "ignoring" keystrokes after the card closes.
+   */
+  closePopover({ restoreFocus = true } = {}) {
+    if (this.popoverElement) {
+      this.popoverElement.remove();
+      this.popoverElement = null;
+    }
+    if (restoreFocus && this.activeElement && this.activeElement.isConnected) {
+      const el = this.activeElement;
+      // Defer so we run after the click that dismissed the popover settles
+      setTimeout(() => {
+        try {
+          el.focus({ preventScroll: true });
+          if (typeof el.selectionStart === 'number' && typeof el.selectionEnd === 'number') {
+            const pos = el.selectionEnd;
+            el.setSelectionRange(pos, pos);
+          }
+        } catch {
+          // contenteditable / restricted fields
+          try { el.focus(); } catch { /* ignore */ }
+        }
+      }, 0);
+    }
   }
 
   setOnAccept(cb) {
@@ -423,8 +451,7 @@ class OverlayManager {
 
   togglePopover() {
     if (this.popoverElement) {
-      this.popoverElement.remove();
-      this.popoverElement = null;
+      this.closePopover({ restoreFocus: true });
       return;
     }
 
@@ -464,9 +491,10 @@ class OverlayManager {
         </div>
       `;
 
-      popover.querySelector('.popover-close').addEventListener('click', () => {
-        this.popoverElement.remove();
-        this.popoverElement = null;
+      popover.querySelector('.popover-close').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closePopover({ restoreFocus: true });
       });
 
       const select = popover.querySelector('.popover-lang-select');
@@ -498,9 +526,10 @@ class OverlayManager {
         <button class="popover-close" title="Close">&times;</button>
       </div>
     `;
-    header.querySelector('.popover-close').addEventListener('click', () => {
-      this.popoverElement.remove();
-      this.popoverElement = null;
+    header.querySelector('.popover-close').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.closePopover({ restoreFocus: true });
     });
     header.querySelector('.btn-fix-all').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -537,9 +566,8 @@ class OverlayManager {
         this.currentSuggestions.splice(idx, 1);
         card.remove();
         this.reposition();
-        if (this.currentSuggestions.length === 0 && this.popoverElement) {
-          this.popoverElement.remove();
-          this.popoverElement = null;
+        if (this.currentSuggestions.length === 0) {
+          this.closePopover({ restoreFocus: true });
         }
       });
 
@@ -567,10 +595,7 @@ class OverlayManager {
         this.onAcceptCallback(sug);
       }
       this.currentSuggestions.splice(idx, 1);
-      if (this.popoverElement) {
-        this.popoverElement.remove();
-        this.popoverElement = null;
-      }
+      this.closePopover({ restoreFocus: true });
       this.reposition();
     }
   }
@@ -583,10 +608,7 @@ class OverlayManager {
       FieldDetector.replaceText(this.activeElement, sug.start, sug.end, sug.replacement);
     }
     this.currentSuggestions = [];
-    if (this.popoverElement) {
-      this.popoverElement.remove();
-      this.popoverElement = null;
-    }
+    this.closePopover({ restoreFocus: true });
     this.reposition();
     if (typeof this.onAcceptCallback === 'function') {
       this.onAcceptCallback();
@@ -600,11 +622,37 @@ class OverlayManager {
   let debounceTimer = null;
   const DEBOUNCE_DELAY_MS = 350;
   let currentTarget = null;
+  let listenersAttached = false;
+  let blockedDomains = ['bank', 'paypal.com'];
+
+  function isCurrentDomainBlocked(domains = blockedDomains) {
+    const hostname = window.location.hostname.toLowerCase();
+    if (!hostname) return false;
+    return (domains || []).some((d) => hostname.includes(String(d).toLowerCase()));
+  }
+
+  function clearActiveOverlays() {
+    clearTimeout(debounceTimer);
+    currentTarget = null;
+    if (typeof overlayManager.destroy === 'function') {
+      overlayManager.destroy();
+    } else if (overlayManager.rootHost) {
+      overlayManager.rootHost.remove();
+      overlayManager.rootHost = null;
+      overlayManager.shadowRoot = null;
+      overlayManager.badgeElement = null;
+      overlayManager.popoverElement = null;
+      overlayManager.highlightLayer = null;
+      overlayManager.activeElement = null;
+      overlayManager.currentSuggestions = [];
+    }
+  }
 
   /**
    * Requests grammar analysis from background service worker
    */
   async function triggerGrammarCheck(element) {
+    if (!listenersAttached) return;
     if (!element || !FieldDetector.isEditable(element)) return;
 
     const text = FieldDetector.getText(element);
@@ -621,6 +669,11 @@ class OverlayManager {
           url: window.location.href
         }
       });
+
+      if (response && (response.blocked || response.disabled)) {
+        clearActiveOverlays();
+        return;
+      }
 
       if (response && response.success && Array.isArray(response.suggestions)) {
         overlayManager.render(element, response.suggestions, {
@@ -715,12 +768,44 @@ class OverlayManager {
     }
   }
 
-  // Bind global capture event listeners for real-time responsiveness
-  document.addEventListener('input', handleInput, true);
-  document.addEventListener('keydown', handleKeydown, true);
-  document.addEventListener('focus', handleFocus, true);
-  document.addEventListener('click', handleFocus, true);
-  document.addEventListener('blur', handleBlur, true);
+  function attachListeners() {
+    if (listenersAttached) return;
+    document.addEventListener('input', handleInput, true);
+    document.addEventListener('keydown', handleKeydown, true);
+    document.addEventListener('focus', handleFocus, true);
+    document.addEventListener('click', handleFocus, true);
+    document.addEventListener('blur', handleBlur, true);
+    listenersAttached = true;
+    console.info('[nodaysrammar] Content script listeners attached on:', window.location.hostname);
+  }
 
-  console.info('[nodaysrammar] Content script initialized on:', window.location.hostname);
+  function detachListeners() {
+    if (!listenersAttached) return;
+    document.removeEventListener('input', handleInput, true);
+    document.removeEventListener('keydown', handleKeydown, true);
+    document.removeEventListener('focus', handleFocus, true);
+    document.removeEventListener('click', handleFocus, true);
+    document.removeEventListener('blur', handleBlur, true);
+    listenersAttached = false;
+    clearActiveOverlays();
+    console.info('[nodaysrammar] Content script listeners detached (blocklisted):', window.location.hostname);
+  }
+
+  function applyBlocklistState(domains) {
+    blockedDomains = Array.isArray(domains) ? domains : blockedDomains;
+    if (isCurrentDomainBlocked(blockedDomains)) {
+      detachListeners();
+    } else {
+      attachListeners();
+    }
+  }
+
+  chrome.storage.sync.get(['blockedDomains'], (result) => {
+    applyBlocklistState(result.blockedDomains || blockedDomains);
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync' || !changes.blockedDomains) return;
+    applyBlocklistState(changes.blockedDomains.newValue || []);
+  });
 })();

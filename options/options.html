@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>nodaysrammar - Options</title>
+  <title>NODAYSIDLE nodaysrammar — Options</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="logo">
         <span class="icon">✨</span>
         <div>
-          <h1>nodaysrammar Settings</h1>
+          <h1>NODAYSIDLE nodaysrammar Settings</h1>
           <p class="subtitle">Configure your on-device multilingual grammar engine</p>
         </div>
       </div>
@@ -61,19 +61,19 @@
 
     <!-- Local AI Runtime Status -->
     <section class="card">
-      <h2>On-Device Model Runtime Status</h2>
-      <p class="desc">Models run locally via WebAssembly and ONNX Runtime Web. No cloud dependencies.</p>
+      <h2>On-Device Classifier Status</h2>
+      <p class="desc">Label tables and dictionaries load locally in the service worker. No cloud dependencies.</p>
       <div class="model-status-table">
         <div class="status-row">
-          <span>🇬🇧 English Model (en-grammar.onnx)</span>
+          <span>🇬🇧 English (vocab-en.json)</span>
           <span class="badge" id="model-status-en">Checking...</span>
         </div>
         <div class="status-row">
-          <span>🇮🇹 Italian Model (it-grammar.onnx)</span>
+          <span>🇮🇹 Italian (vocab-it.json)</span>
           <span class="badge" id="model-status-it">Checking...</span>
         </div>
         <div class="status-row">
-          <span>🇸🇮 Slovenian Model (sl-grammar.onnx)</span>
+          <span>🇸🇮 Slovenian (vocab-sl.json)</span>
           <span class="badge" id="model-status-sl">Checking...</span>
         </div>
       </div>

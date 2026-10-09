@@ -1,161 +1,150 @@
 <p align="center">
-  <img src="assets/icons/icon-128.png" width="128" height="128" alt="nodaysrammar icon">
+  <img src="assets/icons/icon-128.png" width="128" height="128" alt="NODAYSIDLE nodaysrammar icon">
 </p>
 
-<h1 align="center">nodaysrammar</h1>
+<h1 align="center">NODAYSIDLE nodaysrammar</h1>
 
 <p align="center">
   <strong>On-device, zero-telemetry multilingual grammar and spell checker for Chromium.</strong><br>
-  Local neural syntax classification via ONNX Runtime Web WASM and 35,000-word offline frequency dictionaries. Your keystrokes never leave your browser.
+  A small JS classifier, ~35,000-word offline dictionaries, and grammar rules — your keystrokes never leave the browser.
 </p>
 
 <p align="center">
   <img alt="Chrome MV3" src="https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=google-chrome&logoColor=white">
-  <img alt="ONNX Runtime Web" src="https://img.shields.io/badge/ONNX%20Runtime-Web%20WASM-005CED?style=flat-square&logo=onnx&logoColor=white">
-  <img alt="Languages" src="https://img.shields.io/badge/Languages-EN%20%7C%20IT%20%7C%20SL-blueviolet?style=flat-square">
+  <img alt="Languages" src="https://img.shields.io/badge/Languages-EN%20%7C%20IT%20%7C%20SL-0B3D91?style=flat-square">
   <img alt="Privacy" src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success?style=flat-square">
   <img alt="Telemetry" src="https://img.shields.io/badge/Telemetry-None-4c8c6b?style=flat-square">
+  <img alt="Not on CWS" src="https://img.shields.io/badge/Chrome%20Web%20Store-not%20listed-lightgrey?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green?style=flat-square">
 </p>
 
 <p align="center">
-  <a href="https://github.com/nodaysidle/nodaysrammar/releases"><strong>Releases</strong></a>
+  <img src="docs/media/nodaysrammar.gif" alt="NODAYSIDLE nodaysrammar demo">
+</p>
+
+<p align="center">
+  <a href="https://github.com/nodaysidle/nodaysrammar/releases"><strong>Download Releases</strong></a>
   ·
   <a href="USERGUIDE.md"><strong>User Guide</strong></a>
   ·
   <a href="codemap.md"><strong>Architecture Map</strong></a>
-  ·
-  <a href="#quick-start"><strong>Quick Start</strong></a>
+</p>
+
+<p align="center">
+  <a href="#why">Why</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#usage">Usage</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#development">Development</a> ·
+  <a href="#license">License</a>
 </p>
 
 ---
 
-> **The Problem:** Cloud-based writing assistants (Grammarly, LanguageTool Cloud, remote AI extensions) transmit private keystrokes, personal notes, and credentials to third-party servers, creating security risks, latency overhead, and tracking vectors.
->
-> **The Result:** **nodaysrammar** runs 100% locally. Lightweight ONNX neural models and 35,000-word offline frequency dictionaries execute in the Chromium background service worker via WebAssembly. Keystrokes never touch the network. Highlighting and suggestion cards render inside an isolated, non-colliding Shadow DOM overlay.
+## Why
+
+Cloud writing assistants send drafts and keystrokes to remote servers. **NODAYSIDLE nodaysrammar** keeps every check inside your browser process: a small JS token classifier over fixed label tables, ~35k-word frequency dictionaries, and deterministic grammar rules for English, Italian, and Slovenian.
+
+It is **not** listed on the Chrome Web Store. Install from [GitHub Releases](https://github.com/nodaysidle/nodaysrammar/releases) (or build from source) via Load unpacked.
 
 ---
 
-## ⚡ Architecture Flow
+## Features
+
+- **100% on-device**: no analytics, no remote inference, works offline.
+- **English rules** (exact): a/an (including silent-h vowel sounds such as *honest* / *hour*), linking verb + adverb, their/there, its/it's, could/should/would of, he don't / they doesn't, I has / he has agreement, repeated words — plus dictionary + label-table spelling.
+- **Italian**: accents (`perché`, `è`), elision (`un'` / `un`, `qual è`), common orthography.
+- **Slovenian**: preposition phonetics (`s`/`z`, `k`/`h`), commas before `ki`/`ko`/`ker`/`da`/`če`.
+- **Isolated Shadow DOM** overlays (badge, underlines, auto-flipping suggestion card).
+- **Safe replacement** with caret/undo preservation and synthetic `input`/`change` events.
+- **Fix All** and optional auto-fix on Space/Enter.
+- **Per-site blocklist** synced via `chrome.storage.sync`.
+
+---
+
+## Privacy
+
+All grammar and spell checking runs **on-device** in the extension service worker and content script. Text is never sent to a server. Preferences — including the site blocklist, language, and toggles — sync through **Chrome Sync** (`chrome.storage.sync`) when you are signed into Chrome; they are not uploaded to nodaysidle.
+
+Manifest permissions: **`storage` only**. Content scripts match `<all_urls>` so checking works on normal websites; blocked domains disable listeners on those hosts.
+
+---
+
+## Install
+
+### Download from Releases (recommended)
+
+1. Open [Releases](https://github.com/nodaysidle/nodaysrammar/releases) and download `NODAYSIDLE-nodaysrammar-<version>-chrome.zip` plus the matching `.sha256` file.
+2. Verify the archive: `shasum -a 256 -c NODAYSIDLE-nodaysrammar-<version>-chrome.zip.sha256`
+3. Unzip the archive.
+4. Open `chrome://extensions` (or the equivalent page in Brave / Edge / Arc).
+5. Enable **Developer mode**.
+6. Click **Load unpacked** and select the unzipped `nodaysrammar` folder.
+
+Checksums and release notes for each version live on the [Releases](https://github.com/nodaysidle/nodaysrammar/releases) page.
+
+### Build from source
+
+```bash
+git clone https://github.com/nodaysidle/nodaysrammar.git
+cd nodaysrammar
+# Load the repo root as an unpacked extension (no build step required)
+```
+
+Then Load unpacked as above, pointing at the clone root.
+
+---
+
+## Usage
+
+1. Focus any `input`, `textarea`, or `contenteditable` field.
+2. After a short debounce, squiggly hints and a corner badge appear when issues are found.
+3. Click the badge (or an underline) for replacements, or **Fix All**.
+4. Use the toolbar popup to toggle the engine, pick a language, or open Settings for the blocklist.
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart TD
-    A["Active Editable Field (input / textarea / contenteditable)"] -->|User types / Debounce 350ms| B["Content Script (Observer)"]
-    
-    B -->|chrome.runtime.sendMessage| C["Background Service Worker"]
-    
-    subgraph Local_Pipeline ["100% On-Device Neural & Syntactic Engine"]
-        C --> D["Language Detector (~0.5ms n-gram classification)"]
-        D -->|EN / IT / SL| E["35,000-Word Offline Frequency Dictionary"]
-        E -->|Spelling & Levenshtein Candidates| F["ONNX Runtime Web (WASM Engine)"]
-        F -->|Token Classification & Syntax Rules| G["Error Coordinates & Replacements"]
+    A["Editable field"] -->|debounce 350ms| B["Content script"]
+    B -->|chrome.runtime.sendMessage| C["Service worker"]
+    subgraph OnDevice ["On-device pipeline"]
+      C --> D["Language detector"]
+      D --> E["~35k-word dictionaries"]
+      D --> F["JS token classifier (vocab-*.json)"]
+      D --> G["Grammar regex rules"]
+      E --> H["Suggestions"]
+      F --> H
+      G --> H
     end
-    
-    G -->|IPC Response| H["Shadow DOM Manager (#nodaysrammar-root)"]
-    
-    subgraph Isolated_Overlay ["Zero CSS Bleed & Native UX"]
-        H --> H1["Floating Error Count Badge"]
-        H --> H2["Squiggly Underline Highlights"]
-        H --> H3["Auto-Flipping Viewport Popover Card"]
-    end
-    
-    H3 -->|Click Suggestion / 'Fix All' / Spacebar| I["Caret-Preserving DOM Replacement"]
+    H --> I["Shadow DOM overlay"]
+    I --> J["Caret-preserving replace"]
 ```
 
----
-
-## ✨ Features
-
-- **Zero Telemetry & 100% Private**: No analytics, no logging, no external API endpoints. Disconnect from Wi-Fi and the extension continues functioning at full speed.
-- **Multilingual Support**:
-  - 🇬🇧 **English (`en`)**: Subject-verb agreement, indefinite article selection (`a` vs `an`), homophone disambiguation (`there`/`their`/`they're`, `its`/`it's`), double negatives.
-  - 🇮🇹 **Italian (`it`)**: Mandatory accents (`perché`, `è`), apostrophe and elision handling (`un'` vs `un`, `qual è`), contraction grammar.
-  - 🇸🇮 **Slovenian (`sl`)**: Preposition phonetics (`s` before unvoiced consonants vs `z`; `k` vs `h`), subordinate conjunction commas (`ki`, `ko`, `ker`, `da`, `če`), diacritics.
-- **Isolated Shadow DOM**: Injected via closed Shadow DOM to guarantee that page styles never break extension badges or suggestion cards, and extension styles never bleed into the host page.
-- **Viewport-Aware Popover**: Suggestion cards auto-flip position between bottom and top based on element proximity to viewport boundaries.
-- **Safe Text Replacement**: Dispatches synthetic `input` and `change` events with `execCommand('insertText')` to retain native browser undo history (`Ctrl+Z`).
-- **Ergonomic Workflows**:
-  - Click any underline to inspect suggestions.
-  - Click floating badge to view all errors.
-  - Click **"Fix All"** to apply all suggestions instantly.
-  - Optional **"Auto-Fix on Spacebar"** mode.
+Assets: `models/vocab-*.json` (fixed per-token label tables generated with seed 42 — **not trained**), `models/dict-*.json`, and plain JS in `background/`.
 
 ---
 
-## 📸 Interface Preview
-
-| Feature | Screenshot |
-| --- | --- |
-| **Interactive Underlines & Badge** | ![Live Badge Detected](screenshots/02-live-badge-detected.png) |
-| **Suggestion Popover Card** | ![Popover Inspection](screenshots/03-live-popover-open.png) |
-| **Instant Correction Applied** | ![Text Replaced](screenshots/04-live-text-replaced.png) |
-| **Auto-Flipping Viewport Popover** | ![Auto-Flip Up](screenshots/07-bottom-input-popover-flipped-up.png) |
-| **35,000-Word Dictionary Checks** | ![Dictionary Errors](screenshots/11-35k-dictionary-multi-errors.png) |
-| **Fully Corrected State** | ![All Corrected](screenshots/12-fully-corrected-sentence.png) |
-| **Options & Configuration Page** | ![Options Page](screenshots/01-options-page.png) |
-
----
-
-## 🚀 Quick Start
-
-### 1. Installation
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/nodaysidle/nodaysrammar.git
-   cd nodaysrammar
-   ```
-2. Open your Chromium-based browser (Chrome, Brave, Edge, Arc, Chromium).
-3. Navigate to `chrome://extensions`.
-4. Turn on **Developer mode** (toggle in upper right corner).
-5. Click **Load unpacked** and select the `nodaysrammar` folder.
-6. The extension is now active on all websites!
-
-### 2. Testing Live
-
-Run the comprehensive automated Puppeteer test suite against Brave / Chromium:
+## Development
 
 ```bash
 npm install
-npm test
-```
-
-To test spacebar auto-fix and "Fix All" workflows:
-
-```bash
+npm run test:regressions   # unit / REEL regressions (no browser)
+npm test                   # live Puppeteer suite (set NODAYSRAMMAR_BROWSER if needed)
 npm run test:autofix
+python3 scripts/generate_real_models.py   # regenerate vocab-*.json label tables
 ```
 
----
+Browser binary resolution: `NODAYSRAMMAR_BROWSER`, then `CHROME_PATH` / `CHROMIUM_PATH`, then common Chrome/Chromium paths (defaulting away from a hard-coded Brave Origin path).
 
-## 🧠 Neural Models & Offline Weights
-
-nodaysrammar bundles lightweight ONNX neural models trained with opset 17 alongside 35,000-word offline frequency dictionaries:
-
-| Model | File | Format | Target Rules |
-| --- | --- | --- | --- |
-| **English** | `models/en-grammar.onnx` | ONNX opset 17 (31 KB) | Agreement, articles, homophones, orthography |
-| **Italian** | `models/it-grammar.onnx` | ONNX opset 17 (25 KB) | Mandatory accents, elision, contractions |
-| **Slovenian** | `models/sl-grammar.onnx` | ONNX opset 17 (24 KB) | Preposition phonetics (s/z, k/h), conjunction commas |
-| **Dictionaries** | `models/dict-*.json` | JSON (~570 KB each) | 35k-word frequency lists + Levenshtein ranking |
-
-To regenerate or retrain models from scratch:
-
-```bash
-python3 scripts/generate_real_models.py
-```
+See [`USERGUIDE.md`](USERGUIDE.md), [`codemap.md`](codemap.md), [`AGENTS.md`](AGENTS.md), and [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
-## 📁 Repository Reference
-
-- [`USERGUIDE.md`](USERGUIDE.md) — Comprehensive user, technical, and troubleshooting documentation
-- [`codemap.md`](codemap.md) — Complete codebase index and architectural structure
-- [`AGENTS.md`](AGENTS.md) — System invariants, IPC contracts, and agent guidelines
-- [`docs/RELEASE-NOTES-v1.0.0.md`](docs/RELEASE-NOTES-v1.0.0.md) — Release notes and checksums
-
----
-
-## 📄 License
+## License
 
 [MIT License](LICENSE) © 2026 [nodaysidle](https://github.com/nodaysidle)

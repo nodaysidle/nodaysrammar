@@ -1,41 +1,26 @@
-# nodaysrammar Production Neural Models
+# Models — NODAYSIDLE nodaysrammar
 
-This folder contains active, production-grade on-device machine learning models and vocabulary assets for **nodaysrammar**.
+This folder holds the on-device assets used by the small JS classifier and spell checker:
 
-## Models & Weights
-- `en-grammar.onnx` — Fully validated ONNX sequence model for English grammar & spell detection (30.8 KB, IR v9, opset 17).
-- `it-grammar.onnx` — Fully validated ONNX sequence model for Italian grammar & spell detection (24.7 KB, IR v9, opset 17).
-- `sl-grammar.onnx` — Fully validated ONNX sequence model for Slovenian grammar & spell detection (24.2 KB, IR v9, opset 17).
+| File | Role |
+| --- | --- |
+| `vocab-en.json` / `vocab-it.json` / `vocab-sl.json` | Fixed per-token label tables + embedding weights + correction maps |
+| `dict-en.json` / `dict-it.json` / `dict-sl.json` | ~35,000-word frequency dictionaries for Levenshtein suggestions |
 
-## Architecture
-Each model implements the following neural classification graph:
+## How the label tables are built
+
+`scripts/generate_real_models.py` generates the `vocab-*.json` files with **deterministic random weights (numpy seed 42)** and **forced class labels** for known misspellings/grammar tokens. They are **not trained** and are not ONNX/WASM models.
+
+The runtime forward pass (in `background/model-loader.js`) is plain JavaScript:
+
 ```
-input_ids [1, seq_len]
-    │
-    ▼
-Gather(E, input_ids) [1, seq_len, 32]
-    │
-    ▼
-MatMul(W1) + Add(B1) [1, seq_len, 64]
-    │
-    ▼
-ReLU [1, seq_len, 64]
-    │
-    ▼
-MatMul(W2) + Add(B2) [1, seq_len, 5]
-    │
-    ▼
-logits [1, seq_len, 5]
+Gather(E) → Linear(32→64) + ReLU → Linear(64→5) → argmax
 ```
 
-## Classes
-- `0`: `OK` (Token is grammatically and orthographically valid)
-- `1`: `SPELL` (Spelling error / lexical typo)
-- `2`: `GRAMMAR` (Grammatical agreement or inflection issue)
-- `3`: `PREP` (Preposition mismatch)
-- `4`: `PUNCT` (Punctuation or clause boundary issue)
+Classes: `OK`, `SPELL`, `GRAMMAR`, `PREP`, `PUNCT`.
 
-## Vocabulary & Weight Databases
-- `vocab-en.json` — English token vocabulary, learned embedding matrices, and corrections database.
-- `vocab-it.json` — Italian token vocabulary, learned embedding matrices, and corrections database.
-- `vocab-sl.json` — Slovenian token vocabulary, learned embedding matrices, and corrections database.
+Regenerate:
+
+```bash
+python3 scripts/generate_real_models.py
+```

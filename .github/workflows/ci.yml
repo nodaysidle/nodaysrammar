@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate manifest
+        run: npm run validate:manifest
+
+      - name: Unit / regression tests
+        run: npm run test:regressions
+
+      - name: Install Chromium for Puppeteer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser || sudo apt-get install -y chromium || true
+          # ubuntu-latest often ships google-chrome via browser action; fall back to chromium
+          if [ -x /usr/bin/google-chrome-stable ]; then
+            echo "NODAYSRAMMAR_BROWSER=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
+          elif [ -x /usr/bin/google-chrome ]; then
+            echo "NODAYSRAMMAR_BROWSER=/usr/bin/google-chrome" >> "$GITHUB_ENV"
+          elif [ -x /usr/bin/chromium-browser ]; then
+            echo "NODAYSRAMMAR_BROWSER=/usr/bin/chromium-browser" >> "$GITHUB_ENV"
+          elif [ -x /usr/bin/chromium ]; then
+            echo "NODAYSRAMMAR_BROWSER=/usr/bin/chromium" >> "$GITHUB_ENV"
+          else
+            echo "No system Chrome/Chromium found; attempting puppeteer chrome download via npx"
+            npx --yes @puppeteer/browsers install chrome@stable --path "$HOME/chrome-ci" || true
+            CHROME_BIN=$(find "$HOME/chrome-ci" -type f -name chrome -executable 2>/dev/null | head -1)
+            if [ -n "$CHROME_BIN" ]; then
+              echo "NODAYSRAMMAR_BROWSER=$CHROME_BIN" >> "$GITHUB_ENV"
+            else
+              echo "::warning::Browser tests will be skipped — no Chrome/Chromium binary available"
+              echo "SKIP_BROWSER_TESTS=1" >> "$GITHUB_ENV"
+            fi
+          fi
+
+      - name: Install xvfb for headed MV3 extension tests
+        if: env.SKIP_BROWSER_TESTS != '1'
+        run: sudo apt-get install -y xvfb
+
+      - name: Live extension tests (headed under xvfb)
+        if: env.SKIP_BROWSER_TESTS != '1'
+        run: xvfb-run -a npm test
+        env:
+          NODAYSRAMMAR_BROWSER: ${{ env.NODAYSRAMMAR_BROWSER }}
+
+      - name: Auto-fix workflow tests (headed under xvfb)
+        if: env.SKIP_BROWSER_TESTS != '1'
+        run: xvfb-run -a npm run test:autofix
+        env:
+          NODAYSRAMMAR_BROWSER: ${{ env.NODAYSRAMMAR_BROWSER }}

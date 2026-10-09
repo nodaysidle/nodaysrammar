@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
 scripts/generate_real_models.py
-Generates real, valid, production-grade ONNX neural models and vocabularies
-for English, Italian, and Slovenian on-device grammar checking.
+Generates fixed per-token label tables (vocab-*.json) for the on-device JS classifier.
+Weights are deterministic (numpy seed 42) with forced labels — not trained.
 """
 
 import json
 import os
 import numpy as np
-import onnx
-from onnx import helper, TensorProto, numpy_helper
 
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'models'))
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -227,70 +225,35 @@ def build_model_for_lang(lang_code, lang_data):
     hidden_dim = 32
     num_classes = 5
 
-    # Calibrate neural weights deterministically
+    # Deterministic random weights (seed 42) with forced labels — not trained
     np.random.seed(42)
     # Embedding table E: [vocab_size, hidden_dim]
     E = np.random.randn(vocab_size, hidden_dim).astype(np.float32) * 0.05
-    
+
     # Layer 1: [hidden_dim, 64]
     W1 = np.random.randn(hidden_dim, 64).astype(np.float32) * 0.1
     B1 = np.zeros(64, dtype=np.float32)
-    
+
     # Layer 2: [64, num_classes]
     W2 = np.random.randn(64, num_classes).astype(np.float32) * 0.1
     B2 = np.zeros(num_classes, dtype=np.float32)
 
-    # Solve / project embeddings so that forward pass aligns with token_labels
-    pseudo_inv_W = np.linalg.pinv(W1 @ W2) # [num_classes, hidden_dim]
+    # Project embeddings so the JS forward pass aligns with token_labels
+    pseudo_inv_W = np.linalg.pinv(W1 @ W2)  # [num_classes, hidden_dim]
     for tid, label in token_labels.items():
         target_logit = np.zeros(num_classes, dtype=np.float32)
-        target_logit[label] = 5.0 # High positive activation for target label
+        target_logit[label] = 5.0  # High positive activation for target label
         for other in range(num_classes):
             if other != label:
                 target_logit[other] = -2.0
-        # Set embedding to project to target_logit
         E[tid] = target_logit @ pseudo_inv_W
 
-    # Construct ONNX graph
-    t_E = numpy_helper.from_array(E, name='E')
-    t_W1 = numpy_helper.from_array(W1, name='W1')
-    t_B1 = numpy_helper.from_array(B1, name='B1')
-    t_W2 = numpy_helper.from_array(W2, name='W2')
-    t_B2 = numpy_helper.from_array(B2, name='B2')
-
-    input_ids = helper.make_tensor_value_info('input_ids', TensorProto.INT64, [1, None])
-    logits = helper.make_tensor_value_info('logits', TensorProto.FLOAT, [1, None, num_classes])
-
-    node_gather = helper.make_node('Gather', inputs=['E', 'input_ids'], outputs=['embedded'], axis=0)
-    node_mm1 = helper.make_node('MatMul', inputs=['embedded', 'W1'], outputs=['h1_pre'])
-    node_add1 = helper.make_node('Add', inputs=['h1_pre', 'B1'], outputs=['h1_bias'])
-    node_relu = helper.make_node('Relu', inputs=['h1_bias'], outputs=['h1'])
-    node_mm2 = helper.make_node('MatMul', inputs=['h1', 'W2'], outputs=['logits_pre'])
-    node_add2 = helper.make_node('Add', inputs=['logits_pre', 'B2'], outputs=['logits'])
-
-    graph = helper.make_graph(
-        [node_gather, node_mm1, node_add1, node_relu, node_mm2, node_add2],
-        f'{lang_code.upper()}GrammarNeuralTagger',
-        [input_ids],
-        [logits],
-        [t_E, t_W1, t_B1, t_W2, t_B2]
-    )
-
-    model = helper.make_model(graph, opset_imports=[helper.make_opsetid('', 17)], ir_version=9)
-    model.doc_string = f"Real on-device grammar classification model for {lang_code.upper()}"
-    onnx.checker.check_model(model)
-
-    onnx_path = os.path.join(OUTPUT_DIR, f'{lang_code}-grammar.onnx')
-    with open(onnx_path, 'wb') as f:
-        f.write(model.SerializeToString())
-    print(f"Generated ONNX model: {onnx_path} ({os.path.getsize(onnx_path)} bytes)")
-
-    # Save complete vocabulary JSON with weights and mappings
     vocab_json_path = os.path.join(OUTPUT_DIR, f'vocab-{lang_code}.json')
     vocab_data = {
         'language': lang_code,
-        'version': '1.0.0',
+        'version': '1.0.1',
         'architecture': 'Gather -> Linear(32, 64) -> ReLU -> Linear(64, 5)',
+        'note': 'Fixed per-token label table; weights generated with seed 42 + forced labels (not trained)',
         'classes': ['OK', 'SPELL', 'GRAMMAR', 'PREP', 'PUNCT'],
         'vocab_size': vocab_size,
         'vocab': vocab,
@@ -305,9 +268,9 @@ def build_model_for_lang(lang_code, lang_data):
     }
     with open(vocab_json_path, 'w', encoding='utf-8') as f:
         json.dump(vocab_data, f, ensure_ascii=False, indent=2)
-    print(f"Generated Vocab JSON: {vocab_json_path} ({os.path.getsize(vocab_json_path)} bytes)")
+    print(f"Generated vocab label table: {vocab_json_path} ({os.path.getsize(vocab_json_path)} bytes)")
 
 if __name__ == '__main__':
     for lang in ['en', 'it', 'sl']:
         build_model_for_lang(lang, LANGUAGES[lang])
-    print("All production models and vocabularies successfully generated!")
+    print("All vocab label tables successfully generated!")
