@@ -76,8 +76,8 @@ Manifest permissions: **`storage` only**. Content scripts match `<all_urls>` so 
 
 ### Download from Releases (recommended)
 
-1. Open [Releases](https://github.com/nodaysidle/nodaysrammar/releases) and download `NODAYSIDLE-nodaysrammar-<version>-chrome.zip` plus the matching `.sha256` file.
-2. Verify the archive: `shasum -a 256 -c NODAYSIDLE-nodaysrammar-<version>-chrome.zip.sha256`
+1. Download [`NODAYSIDLE-nodaysrammar-1.0.1-chrome.zip`](https://github.com/nodaysidle/nodaysrammar/releases/download/v1.0.1/NODAYSIDLE-nodaysrammar-1.0.1-chrome.zip) and its [`.sha256`](https://github.com/nodaysidle/nodaysrammar/releases/download/v1.0.1/NODAYSIDLE-nodaysrammar-1.0.1-chrome.zip.sha256) file (SHA-256 `31d86ad88491798dbc7a891793cf4824681244e734ab4fb4935db9567a5a6e6d`), or any version from [Releases](https://github.com/nodaysidle/nodaysrammar/releases).
+2. Verify the archive: `shasum -a 256 -c NODAYSIDLE-nodaysrammar-1.0.1-chrome.zip.sha256`
 3. Unzip the archive.
 4. Open `chrome://extensions` (or the equivalent page in Brave / Edge / Arc).
 5. Enable **Developer mode**.
